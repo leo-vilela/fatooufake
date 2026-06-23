@@ -15,8 +15,23 @@
 
     <div class="keys-section" id="keysSection">
       <div class="key-field">
-        <label class="key-label">Chave de API Anthropic</label>
-        <input class="key-input" id="anthropicKey" type="password" placeholder="sk-ant-..." autocomplete="off"/>
+        <label class="key-label">Provedor de IA</label>
+        <select class="key-select" id="apiProvider">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="openrouter">OpenRouter</option>
+          <option value="groq">Groq (Llama / Gemma)</option>
+          <option value="deepseek">DeepSeek</option>
+        </select>
+      </div>
+      <div class="key-field">
+        <label class="key-label" id="keyLabel">Chave de API Anthropic</label>
+        <input class="key-input" id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off"/>
+      </div>
+      <div class="key-field">
+        <label class="key-label">Modelo de IA</label>
+        <input class="key-input" id="apiModel" type="text" placeholder="claude-3-5-haiku-20241022"/>
       </div>
       <div class="key-hint" id="keyHint"></div>
     </div>

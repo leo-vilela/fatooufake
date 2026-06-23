@@ -41,7 +41,7 @@ Este projeto é um fork/clone localizado e aprimorado do repositório original [
 ## 🚀 Funcionalidades
 
 - **Detecção de Declarações ao Vivo**: Monitora continuamente a fala na aba ativa e extrai afirmações passíveis de checagem em tempo real.
-- **Avaliação de Fatos com IA**: Analisa a veracidade das afirmações utilizando modelos de linguagem (Claude/Anthropic) e buscas na web para classificar como:
+- **Avaliação de Fatos com IA**: Analisa a veracidade das afirmações utilizando modelos de linguagem (Anthropic, OpenAI/ChatGPT, Google Gemini, OpenRouter, Groq e DeepSeek) e buscas na web para classificar como:
   * **VERDADEIRO**
   * **MAJORITARIAMENTE VERDADEIRO**
   * **ENGANOSO**
@@ -49,7 +49,7 @@ Este projeto é um fork/clone localizado e aprimorado do repositório original [
   * **NÃO VERIFICÁVEL**
 - **Atribuição de Orador**: Identifica e atribui as falas a cada orador participante quando detectados no título da transmissão ou vídeo.
 - **Análise Léxica e de Ritmo**: Analisa a velocidade da fala e o uso de palavras evasivas e termos emocionais com base na linguística do português brasileiro.
-- **Traga Sua Própria Chave (BYOK)**: Segurança e controle de custos usando sua própria chave de API da Anthropic.
+- **Traga Sua Própria Chave (BYOK)**: Segurança e controle de custos usando suas próprias chaves de API para os provedores suportados (Anthropic, OpenAI, Gemini, OpenRouter, Groq ou DeepSeek).
 - **Exportação de Relatórios**: Baixe o histórico completo da sessão em um arquivo PDF ou HTML bem formatado.
 
 ---
@@ -91,7 +91,7 @@ A extensão foca em checar declarações factuais específicas, tais como:
 
 ## 🔒 Privacidade e Permissões
 
-- **Chaves de API**: Suas chaves de API da Anthropic e Serper são salvas localmente no armazenamento do seu próprio navegador (`chrome.storage`). Nenhum dado de autenticação é enviado a servidores externos além das APIs oficiais configuradas.
+- **Chaves de API**: Suas chaves de API configuradas no popup (Anthropic, OpenAI, Gemini, OpenRouter, Groq ou DeepSeek) e Serper são salvas localmente no armazenamento do seu próprio navegador (`chrome.storage`). Nenhum dado de autenticação é enviado a servidores externos além das APIs oficiais configuradas.
 - **Permissões Utilizadas**:
   * `tabCapture`: Captura o áudio da aba ativa para fins exclusivos de transcrição ao vivo da fala.
   * `activeTab`: Permite a interação visual da extensão com a aba aberta atual.
@@ -107,7 +107,7 @@ A checagem automatizada por IA é uma ferramenta auxiliar e inerentemente imperf
 
 ### Requisitos mínimos:
 - Chrome Manifest V3.
-- Chave de API própria (Anthropic/Claude).
+- Chave de API própria (Anthropic, OpenAI, Gemini, OpenRouter, Groq ou DeepSeek).
 - Navegador moderno baseado em Chromium (Google Chrome, Microsoft Edge, Brave, etc.).
 
 ## 📄 Licença

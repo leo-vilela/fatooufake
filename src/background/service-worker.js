@@ -5,14 +5,32 @@
 // 5.31.2026 -- serper call before claude call for more accurate verdicts
 // 6.12.2026 -- switch to deepgram; too many conflicts w/ webaudio
 
-let ANTHROPIC_KEY = '';
+let ACTIVE_PROVIDER = 'anthropic';
+let ACTIVE_KEY = '';
+let ACTIVE_MODEL = 'claude-3-5-haiku-20241022';
 const SERPER_KEY = '';
 
 async function loadKeys() {
   return new Promise(resolve => {
-    chrome.storage.local.get(['anthropicKey'], (data) => {
-      ANTHROPIC_KEY = data.anthropicKey || '';
-      resolve();
+    chrome.storage.local.get(['selectedProvider'], (providerData) => {
+      ACTIVE_PROVIDER = providerData.selectedProvider || 'anthropic';
+      const keyStorageName   = `${ACTIVE_PROVIDER}Key`;
+      const modelStorageName = `${ACTIVE_PROVIDER}Model`;
+      
+      chrome.storage.local.get([keyStorageName, modelStorageName], (data) => {
+        ACTIVE_KEY = data[keyStorageName] || '';
+        ACTIVE_MODEL = data[modelStorageName] || '';
+        
+        // Backwards compatibility for legacy 'anthropicKey'
+        if (ACTIVE_PROVIDER === 'anthropic' && !ACTIVE_KEY) {
+          chrome.storage.local.get(['anthropicKey'], (legacyData) => {
+            ACTIVE_KEY = legacyData.anthropicKey || '';
+            resolve();
+          });
+        } else {
+          resolve();
+        }
+      });
     });
   });
 }
@@ -160,34 +178,148 @@ async function searchWeb(strictQuery, fuzzyQuery, fallbackQuery, retries = 2) {
   }
 }
 
-// ── Claude ────────────────────────────────────────────────────────────────────
+// ── callLLM (Multi-API router) ────────────────────────────────────────────────
 
-async function callClaude(userMessage, systemPrompt) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 768,
-      temperature: 0,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  });
-  const data = await res.json();
-  if (data.error) {
-    const msg = data.error.message || 'Unknown API error';
-    console.error('[claude] API error:', msg);
-    if (activeTabId) chrome.tabs.sendMessage(activeTabId, { type: 'PIPELINE_ERROR', message: msg }).catch(() => {});
+async function callLLM(userMessage, systemPrompt) {
+  const provider = ACTIVE_PROVIDER;
+  const key = ACTIVE_KEY;
+  const model = ACTIVE_MODEL;
+
+  if (!key) {
+    const errorMsg = `Chave de API para ${provider} não encontrada. Configure-a no popup da extensão.`;
+    console.error(errorMsg);
+    if (activeTabId) chrome.tabs.sendMessage(activeTabId, { type: 'PIPELINE_ERROR', message: errorMsg }).catch(() => {});
     return '';
   }
-  const raw = data.content?.[0]?.text?.trim() || '';
-  return raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+  let url = '';
+  let headers = { 'Content-Type': 'application/json' };
+  let body = {};
+
+  switch (provider) {
+    case 'anthropic':
+      url = 'https://api.anthropic.com/v1/messages';
+      headers['x-api-key'] = key;
+      headers['anthropic-version'] = '2023-06-01';
+      headers['anthropic-dangerous-direct-browser-access'] = 'true';
+      body = {
+        model: model || 'claude-3-5-haiku-20241022',
+        max_tokens: 768,
+        temperature: 0,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+      };
+      break;
+
+    case 'openai':
+      url = 'https://api.openai.com/v1/chat/completions';
+      headers['Authorization'] = `Bearer ${key}`;
+      body = {
+        model: model || 'gpt-4o-mini',
+        temperature: 0,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ]
+      };
+      break;
+
+    case 'gemini':
+      const modelName = model || 'gemini-1.5-flash';
+      url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+      body = {
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: userMessage }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: 'application/json'
+        }
+      };
+      break;
+
+    case 'openrouter':
+      url = 'https://openrouter.ai/api/v1/chat/completions';
+      headers['Authorization'] = `Bearer ${key}`;
+      body = {
+        model: model || 'google/gemini-2.5-flash',
+        temperature: 0,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ]
+      };
+      break;
+
+    case 'groq':
+      url = 'https://api.groq.com/openai/v1/chat/completions';
+      headers['Authorization'] = `Bearer ${key}`;
+      body = {
+        model: model || 'llama-3.3-70b-versatile',
+        temperature: 0,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ]
+      };
+      break;
+
+    case 'deepseek':
+      url = 'https://api.deepseek.com/chat/completions';
+      headers['Authorization'] = `Bearer ${key}`;
+      body = {
+        model: model || 'deepseek-chat',
+        temperature: 0,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ]
+      };
+      break;
+
+    default:
+      console.error('Provedor desconhecido:', provider);
+      return '';
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      const msg = data.error.message || JSON.stringify(data.error);
+      console.error(`[${provider}] API error:`, msg);
+      if (activeTabId) chrome.tabs.sendMessage(activeTabId, { type: 'PIPELINE_ERROR', message: msg }).catch(() => {});
+      return '';
+    }
+
+    let text = '';
+    if (provider === 'anthropic') {
+      text = data.content?.[0]?.text?.trim() || '';
+    } else if (provider === 'gemini') {
+      text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    } else {
+      text = data.choices?.[0]?.message?.content?.trim() || '';
+    }
+
+    return text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  } catch (err) {
+    console.error(`[${provider}] fetch error:`, err);
+    if (activeTabId) chrome.tabs.sendMessage(activeTabId, { type: 'PIPELINE_ERROR', message: err.message }).catch(() => {});
+    return '';
+  }
 }
 
 function parseArray(str) {
@@ -437,7 +569,7 @@ async function evaluateClaims(contextText, title, lexicalSummary, lexicalSnapsho
       ? `\n\nClaims already fact-checked this session — do NOT re-evaluate these or close variants:\n- ${checkedList}\n`
       : '';
 
-    const raw     = await callClaude(
+    const raw     = await callLLM(
       `${titleContext}Transcript: "${contextText}"${alreadyChecked}${lexicalContext}`,
       EVALUATE_PROMPT
     );
@@ -480,7 +612,7 @@ async function groundAndUpdate(contextText, fastResults, title, lexicalSummary, 
       try {
         const urls = await searchWeb(fastResult.strict_query, fastResult.fuzzy_query, fastResult.claim);
         if (!urls.length) return null;
-        const raw = await callClaude(
+        const raw = await callLLM(
           `${titleContext}Transcript: "${contextText}"\n\nEvaluate ONLY this specific claim:\n1. ${fastResult.claim}\n\nWeb search results:\n${urls.join('\n')}${lexicalContext}`,
           EVALUATE_PROMPT
         );

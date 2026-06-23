@@ -15,16 +15,26 @@ Este projeto é um fork/clone localizado e aprimorado do repositório original [
 ### Ajustes e Melhorias para o Contexto Brasileiro (PT-BR):
 - **Tradução Completa da Interface**: Toda a interface do usuário (pop-up, botões de ação, mensagens de carregamento e painéis flutuantes) foi traduzida para o português do Brasil.
 - **Localização dos Vereditos**: Adaptação dos termos de classificação de veracidade (ex: *TRUE* &rarr; *VERDADEIRO*, *FALSE* &rarr; *FALSO*, *MISLEADING* &rarr; *ENGANOSO*, etc.).
-- **Motores de Busca Focados no Brasil**: Otimização do fluxo de pesquisa na web para priorizar as maiores agências e portais de checagem do Brasil, incluindo:
+- **Motores de Busca Focados no Brasil**: Otimização do fluxo de pesquisa na web para priorizar os maiores portais de checagem do Brasil, incluindo:
   - **G1 Fato ou Fake**
   - **Agência Lupa**
   - **Aos Fatos**
   - **Estadão Verifica**
   - **Boatos.org**
+- **Integração de Bases Estatísticas Oficiais (Whitelist)**: Adicionado suporte para pesquisar diretamente em fontes e órgãos públicos brasileiros para validar dados socioeconômicos, demográficos, de saúde e eleitorais. Criada uma whitelist (`ALLOWED_OFFICIAL_DOMAINS`) que ignora o bloqueio geral de `.gov.br` ou `.jus.br` para os seguintes portais:
+  - **IBGE** (`ibge.gov.br`): Censo, demografia, desemprego (PNAD) e inflação oficial (IPCA/INPC).
+  - **Banco Central do Brasil** (`bcb.gov.br`): Taxa Selic, câmbio, metas de inflação e indicadores monetários.
+  - **DataSUS / Ministério da Saúde** (`datasus.saude.gov.br` / `saude.gov.br`): Cobertura vacinal (SI-PNI), óbitos/mortalidade (SIM), internações hospitalares (SIH) e gastos com saúde pública (SIOPS).
+  - **IPEA** (`ipeadata.gov.br` / `ipea.gov.br`): Séries históricas de dados sociais e econômicos.
+  - **TSE** (`tse.jus.br`): Resultados de votações e estatísticas oficiais de eleições.
+  - **Portal da Transparência** (`transparencia.gov.br`): Gastos públicos federais, salários e contratos.
+  - **INEP** (`inep.gov.br`): IDEB, ENEM e estatísticas sobre educação básica e superior.
+- **Otimização de Consultas (Fuzzy Matching)**: Removido o uso de aspas exatas `"${query}"` nas consultas enviadas à API Serper do Google. Isso permite buscas mais flexíveis, com maior taxa de acerto para frases faladas e transcritas em tempo real.
 - **Filtros de Imparcialidade e Spam**: Adaptação da lista de bloqueio de domínios para ignorar propagandas de partidos políticos brasileiros e redes sociais amplamente difundidas no cenário nacional (como Kwai e TikTok).
 - **Prompt da IA Customizado**: Reformulação completa das instruções do Service Worker em português (`EVALUATE_PROMPT`), focando nas nuances e gírias da retórica política do Brasil.
 - **Exportação de Relatórios**: O modelo de exportação de sessões em PDF/HTML foi adaptado para gerar relatórios detalhados inteiramente em português.
 - **Detecção de Oradores**: Ajuste na Expressão Regular de identificação de oradores no título do YouTube para suportar conectores em português (ex: *"e"*, *"vs"*, *"versus"*, *"contra"*).
+
 
 ---
 

@@ -1,8 +1,6 @@
 # Service worker
-src/offscreen/offscreen.js
-
-
 # OS
+
 .DS_Store
 Thumbs.db
 

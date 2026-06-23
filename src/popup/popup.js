@@ -6,6 +6,7 @@ const apiProviderEl = document.getElementById('apiProvider');
 const apiKeyEl      = document.getElementById('apiKey');
 const keyLabelEl    = document.getElementById('keyLabel');
 const apiModelEl    = document.getElementById('apiModel');
+const deepgramKeyEl = document.getElementById('deepgramKey');
 const keyHint       = document.getElementById('keyHint');
 const keysSection   = document.getElementById('keysSection');
 
@@ -83,10 +84,15 @@ apiProviderEl.addEventListener('change', () => {
 
 // ── Load saved state ──────────────────────────────────────────────────────────
 
-chrome.storage.local.get(['selectedProvider'], (data) => {
+chrome.storage.local.get(['selectedProvider', 'deepgramKey'], (data) => {
   const provider = data.selectedProvider || 'anthropic';
   apiProviderEl.value = provider;
   loadProviderConfig(provider);
+
+  if (data.deepgramKey) {
+    deepgramKeyEl.value = data.deepgramKey;
+    deepgramKeyEl.classList.add('saved');
+  }
 });
 
 // ── Save configuration on change ──────────────────────────────────────────────
@@ -111,14 +117,28 @@ apiModelEl.addEventListener('change', () => {
   apiModelEl.classList.add('saved');
 });
 
+deepgramKeyEl.addEventListener('input', () => {
+  deepgramKeyEl.classList.remove('saved');
+  updateHint();
+});
+deepgramKeyEl.addEventListener('change', () => {
+  chrome.storage.local.set({ deepgramKey: deepgramKeyEl.value.trim() });
+  deepgramKeyEl.classList.add('saved');
+  updateHint();
+});
+
 function updateHint() {
   const providerName = PROVIDERS[apiProviderEl.value].label.replace('Chave de API ', '');
-  if (!apiKeyEl.value.trim()) {
+  if (!deepgramKeyEl.value.trim()) {
+    keyHint.textContent = 'Insira sua chave de API do Deepgram.';
+    keyHint.className = 'key-hint';
+    toggleBtn.disabled = isActive ? false : true;
+  } else if (!apiKeyEl.value.trim()) {
     keyHint.textContent = `Insira sua chave para ${providerName} para começar.`;
     keyHint.className = 'key-hint';
     toggleBtn.disabled = isActive ? false : true;
   } else {
-    keyHint.textContent = 'Chave salva.';
+    keyHint.textContent = 'Chaves salvas.';
     keyHint.className = 'key-hint ok';
     toggleBtn.disabled = false;
   }
@@ -153,6 +173,13 @@ toggleBtn.addEventListener('click', async () => {
   const provider = apiProviderEl.value;
   const key = apiKeyEl.value.trim();
   const model = apiModelEl.value.trim() || PROVIDERS[provider].defaultModel;
+  const deepgramKey = deepgramKeyEl.value.trim();
+
+  if (!deepgramKey) {
+    keyHint.textContent = 'Por favor, insira sua chave de API do Deepgram.';
+    keyHint.className   = 'key-hint error';
+    return;
+  }
 
   if (!key) {
     keyHint.textContent = `Por favor, insira sua chave de API para ${PROVIDERS[provider].label.replace('Chave de API ', '')}.`;
@@ -165,7 +192,8 @@ toggleBtn.addEventListener('click', async () => {
     chrome.storage.local.set({
       selectedProvider: provider,
       [`${provider}Key`]: key,
-      [`${provider}Model`]: model
+      [`${provider}Model`]: model,
+      deepgramKey: deepgramKey
     }, r);
   });
 

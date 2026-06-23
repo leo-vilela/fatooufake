@@ -1,9 +1,6 @@
 // offscreen.js
 // Captures tab audio via tabCapture and streams to Deepgram WebSocket.
 // Deepgram handles transcription — no Web Speech API.
-
-const DEEPGRAM_KEY = '';
-
 let mediaStream = null;
 let audioContext = null;
 let processor = null;
@@ -33,6 +30,12 @@ async function startCapture(streamId) {
   if (active) stopCapture();
   active = true;
 
+  // load deepgram key from local storage
+  const keyData = await new Promise(resolve => {
+    chrome.storage.local.get(['deepgramKey'], resolve);
+  });
+  const deepgramKey = keyData.deepgramKey || '';
+
   // get tab audio stream
   mediaStream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -51,7 +54,7 @@ async function startCapture(streamId) {
       'sample_rate=16000',
       'channels=1',
       'model=nova-2',
-      'language=en-US',
+      'language=pt-BR', // Localizado para português brasileiro!
       'punctuate=true',
       'interim_results=true',
       'utterance_end_ms=2500',
@@ -59,7 +62,7 @@ async function startCapture(streamId) {
       'vad_events=true',
       'diarize=true',
     ].join('&'),
-    ['token', DEEPGRAM_KEY]
+    ['token', deepgramKey]
   );
 
   socket.onopen = () => {

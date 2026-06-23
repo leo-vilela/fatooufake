@@ -34,6 +34,8 @@ Para cada alegação identificada:
 4. Explique brevemente o veredito em português (campo "explanation"), citando dados ou as fontes.
 5. Indique o nível de certeza do veredito (campo "confidence"): "HIGH", "MEDIUM" ou "LOW".
 6. Indique o nível de convicção ou evasividade do orador (campo "speaker_confidence"): "HIGH", "MEDIUM" ou "LOW". Baseie-se nos dados de "Análise léxica" (Lexical analysis) fornecidos no contexto: se houver alta taxa de palavras de hesitação/evasivas (hedging) ou preenchimento (filler), a convicção é "LOW"; se houver muitos marcadores de certeza e estatísticas, a convicção é "HIGH".
+7. Escreva um termo de busca altamente preciso para o Google (campo "strict_query") contendo aspas exatas para números, estatísticas ou nomes próprios críticos (ex: Lula "marco temporal" ou IPCA 2022 "5,79%").
+8. Escreva um termo de busca flexível e simplificado contendo apenas palavras-chave essenciais sem aspas (campo "fuzzy_query") para ampliar a busca caso a estrita não traga resultados (ex: inflação acumulada 2022 ibge ou veto marco temporal).
 
 Você deve retornar EXCLUSIVAMENTE um array JSON contendo os objetos de alegação, seguindo estritamente a estrutura abaixo, sem comentários ou explicações fora do JSON:
 [
@@ -43,7 +45,9 @@ Você deve retornar EXCLUSIVAMENTE um array JSON contendo os objetos de alegaç�
     "speaker": "Nome do orador",
     "explanation": "Justificativa curta",
     "confidence": "HIGH | MEDIUM | LOW",
-    "speaker_confidence": "HIGH | MEDIUM | LOW"
+    "speaker_confidence": "HIGH | MEDIUM | LOW",
+    "strict_query": "Termo de busca com aspas exatas",
+    "fuzzy_query": "Termo de busca com palavras-chave abertas"
   }
 ]`;
 
@@ -97,31 +101,48 @@ function isUrlBlocked(url) {
   return BLOCKED_DOMAINS.some(d => url.includes(d));
 }
 
-async function searchWeb(query, retries = 2) {
+async function searchWeb(strictQuery, fuzzyQuery, fallbackQuery, retries = 2) {
   try {
     // Portais de checagem e bases de dados oficiais confiáveis no Brasil
     const FACTCHECK_SITES = 'site:g1.globo.com/fato-ou-fake OR site:lupa.uol.com.br OR site:aosfatos.org OR site:estadao.com.br/estadao-verifica OR site:boatos.org';
     const OFFICIAL_SITES = 'site:ibge.gov.br OR site:bcb.gov.br OR site:ipeadata.gov.br OR site:ipea.gov.br OR site:transparencia.gov.br OR site:datasus.saude.gov.br OR site:saude.gov.br OR site:inep.gov.br OR site:tse.jus.br';
     
-    // Removidas as aspas exatas para permitir buscas flexíveis e mais abrangentes
-    const brFactcheckQuery = `${query} (${FACTCHECK_SITES} OR ${OFFICIAL_SITES})`;
+    // Tenta primeiro a busca estrita com aspas (alta precisão)
+    let finalQuery = `${strictQuery || fallbackQuery} (${FACTCHECK_SITES} OR ${OFFICIAL_SITES})`;
     
     const res = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-API-KEY': SERPER_KEY },
-      body: JSON.stringify({ q: brFactcheckQuery, num: 6 }),
+      body: JSON.stringify({ q: finalQuery, num: 6 }),
     });
     const data = await res.json();
     let links = (data.organic ?? [])
       .map(r => r.link)
       .filter(url => url && !isUrlBlocked(url));
     
-    // Se não encontrar links específicos nos portais de checagem ou oficiais, faz a busca geral
-    if (!links.length) {
+    // Se a busca estrita retornar poucos ou nenhum resultado (menos de 2 links), tenta a busca flexível (alta revocação)
+    if (links.length < 2 && fuzzyQuery) {
+      finalQuery = `${fuzzyQuery} (${FACTCHECK_SITES} OR ${OFFICIAL_SITES})`;
+      const resFuzzy = await fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-KEY': SERPER_KEY },
+        body: JSON.stringify({ q: finalQuery, num: 6 }),
+      });
+      const dataFuzzy = await resFuzzy.json();
+      const linksFuzzy = (dataFuzzy.organic ?? [])
+        .map(r => r.link)
+        .filter(url => url && !isUrlBlocked(url));
+      
+      // Mescla os resultados priorizando os estritos
+      links = [...new Set([...links, ...linksFuzzy])];
+    }
+
+    // Se ainda não houver resultados, tenta a busca geral sem restrição de sites como fallback
+    if (!links.length && fallbackQuery) {
       const fallbackRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-API-KEY': SERPER_KEY },
-        body: JSON.stringify({ q: query, num: 6 }),
+        body: JSON.stringify({ q: fallbackQuery, num: 6 }),
       });
       const fallbackData = await fallbackRes.json();
       links = (fallbackData.organic ?? [])
@@ -132,7 +153,7 @@ async function searchWeb(query, retries = 2) {
   } catch (err) {
     if (retries > 0) {
       await new Promise(r => setTimeout(r, 500));
-      return searchWeb(query, retries - 1);
+      return searchWeb(strictQuery, fuzzyQuery, fallbackQuery, retries - 1);
     }
     console.error('[serper] error:', err);
     return [];
@@ -457,7 +478,7 @@ async function groundAndUpdate(contextText, fastResults, title, lexicalSummary, 
 
     const groundedAll = await Promise.all(fastResults.map(async (fastResult) => {
       try {
-        const urls = await searchWeb(fastResult.claim);
+        const urls = await searchWeb(fastResult.strict_query, fastResult.fuzzy_query, fastResult.claim);
         if (!urls.length) return null;
         const raw = await callClaude(
           `${titleContext}Transcript: "${contextText}"\n\nEvaluate ONLY this specific claim:\n1. ${fastResult.claim}\n\nWeb search results:\n${urls.join('\n')}${lexicalContext}`,

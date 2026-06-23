@@ -1,111 +1,106 @@
-# intruth
+# Fato ou Fake - Checagem de Fatos em Tempo Real
 
-hi everyone!
+Uma extensão para o Google Chrome desenvolvida para realizar a checagem de fatos em tempo real durante debates ao vivo, pronunciamentos, entrevistas, coletivas de imprensa e eventos políticos no Brasil!
 
-https://chromewebstore.google.com/detail/InTruth/ikmpglbpcdoapfelcbfpoaddmhmaaocg?hl=en&authuser=0
+<img width="400" height="225" alt="Fato ou Fake Extension Screenshot" src="https://github.com/user-attachments/assets/a0a8fba9-c28f-473c-866d-84951a9b548e" />
 
-built a real-time factchecker called intruth for live debates, speeches, interviews, press conferences, and political events!
+A extensão captura o áudio da aba ativa do navegador, transcreve a fala, identifica declarações factuais à medida que são feitas e fornece vereditos instantâneos baseados em evidências usando análise de Inteligência Artificial e busca na web. Enquanto os artigos de checagem tradicionais costumam sair horas ou dias após os debates, o **Fato ou Fake** permite avaliar as afirmações em tempo real.
 
+---
 
-<img width="400" height="225" alt="image" src="https://github.com/user-attachments/assets/a0a8fba9-c28f-473c-866d-84951a9b548e" />
+## 👥 Créditos e Origem do Projeto
 
-it listens to audio from the active browser tab, identifies factual claims as they are made, and provides instant evidence-based verdicts using AI analysis and web research; most fact-checking docs come out days after debates, but now users can evaluate claims as they're made.
+Este projeto é um fork/clone localizado e aprimorado do repositório original [intruth-factcheck](https://github.com/rpanigrahi222/intruth-factcheck) desenvolvido por **[rpanigrahi222](https://github.com/rpanigrahi222)**.
 
-this is part of a bigger research project @ my university so more to come!
+### Ajustes e Melhorias para o Contexto Brasileiro (PT-BR):
+- **Tradução Completa da Interface**: Toda a interface do usuário (pop-up, botões de ação, mensagens de carregamento e painéis flutuantes) foi traduzida para o português do Brasil.
+- **Localização dos Vereditos**: Adaptação dos termos de classificação de veracidade (ex: *TRUE* &rarr; *VERDADEIRO*, *FALSE* &rarr; *FALSO*, *MISLEADING* &rarr; *ENGANOSO*, etc.).
+- **Motores de Busca Focados no Brasil**: Otimização do fluxo de pesquisa na web para priorizar as maiores agências e portais de checagem do Brasil, incluindo:
+  - **G1 Fato ou Fake**
+  - **Agência Lupa**
+  - **Aos Fatos**
+  - **Estadão Verifica**
+  - **Boatos.org**
+- **Filtros de Imparcialidade e Spam**: Adaptação da lista de bloqueio de domínios para ignorar propagandas de partidos políticos brasileiros e redes sociais amplamente difundidas no cenário nacional (como Kwai e TikTok).
+- **Prompt da IA Customizado**: Reformulação completa das instruções do Service Worker em português (`EVALUATE_PROMPT`), focando nas nuances e gírias da retórica política do Brasil.
+- **Exportação de Relatórios**: O modelo de exportação de sessões em PDF/HTML foi adaptado para gerar relatórios detalhados inteiramente em português.
+- **Detecção de Oradores**: Ajuste na Expressão Regular de identificação de oradores no título do YouTube para suportar conectores em português (ex: *"e"*, *"vs"*, *"versus"*, *"contra"*).
 
-## features
+---
 
-- live claim detection: continuously monitors speech from the active tab and identifies check-worthy factual claims in real time
+## 🚀 Funcionalidades
 
-- live claim evaluation: analyzes claim veracity using large language models and external sources to determine whether a statement is:
+- **Detecção de Declarações ao Vivo**: Monitora continuamente a fala na aba ativa e extrai afirmações passíveis de checagem em tempo real.
+- **Avaliação de Fatos com IA**: Analisa a veracidade das afirmações utilizando modelos de linguagem (Claude/Anthropic) e buscas na web para classificar como:
+  * **VERDADEIRO**
+  * **MAJORITARIAMENTE VERDADEIRO**
+  * **ENGANOSO**
+  * **FALSO**
+  * **NÃO VERIFICÁVEL**
+- **Atribuição de Orador**: Identifica e atribui as falas a cada orador participante quando detectados no título da transmissão ou vídeo.
+- **Análise Léxica e de Ritmo**: Analisa a velocidade da fala e o uso de palavras evasivas e termos emocionais com base na linguística do português brasileiro.
+- **Traga Sua Própria Chave (BYOK)**: Segurança e controle de custos usando sua própria chave de API da Anthropic.
+- **Exportação de Relatórios**: Baixe o histórico completo da sessão em um arquivo PDF ou HTML bem formatado.
 
-* TRUE
-* SUBSTANTIALLY TRUE
-* FALSE
-* MISLEADING
-* UNVERIFIABLE
+---
 
-- speaker attribution: tracks speakers throughout a discussion and attributes claims to the correct participant whenever possible
+## 🛠️ Como Usar o Fato ou Fake:
 
-- context analysis: uses surrounding conversation and event context to improve claim identification and reduce false positives
+1. Abra um vídeo, transmissão ao vivo, debate ou pronunciamento (no YouTube, por exemplo).
+2. Abra a extensão no navegador, configure sua chave de API nas opções.
+3. Atribua os nomes dos oradores e clique em **Iniciar Checagem**.
+4. O áudio da aba será capturado e transcrito automaticamente em segundo plano.
+5. As declarações factuais serão extraídas, validadas contra fontes confiáveis de checagem brasileiras e os vereditos aparecerão instantaneamente na tela!
 
-- real-time verdicts: veracity checks and sources appear while the debate or interview is still in progress
+---
 
-- bring-your-own-key: users provide their own anthropic API key
+## ⚖️ O que é Passível de Checagem?
 
-## how to use intruth:
+A extensão foca em checar declarações factuais específicas, tais como:
+* Dados estatísticos e numéricos.
+* Eventos históricos ou datas específicas.
+* Ações governamentais, leis e políticas públicas.
+* Afirmações científicas, médicas ou de registros públicos.
 
-1. open a video, livestream, debate, interview, or speech.
-2. start the extension, and assign speakers w/ the press of a button
-3. audio from the active tab is captured
-4. speech transcribed 
-5. check-worthy, factual claims are extracted
-6. claims evaluated against authoritative sources
-7. verdicts, explanations are displayed to the user!!!
+*Exemplos:*
+* *"A inflação atingiu o pico de 9,1% em 2022."*
+* *"O projeto de lei foi aprovado no Senado em 2021."*
+* *"A taxa de desemprego atual está abaixo de 5%."*
 
-## what's check-worthy?? 
+**NÃO são checados:**
+* Opiniões e julgamentos de valor subjetivos.
+* Previsões ou promessas de campanha para o futuro.
+* Perguntas retóricas ou descrições emocionais.
 
-check-worthy claims in this context are:
+*Exemplos:*
+* *"Essa política vai destruir a nossa economia."*
+* *"Eu tenho o melhor plano de governo."*
+* *"Se meu oponente vencer, o desastre será inevitável."*
 
-* specific factual statements
-* statistics and numerical claims
-* historical events
-* government actions and policies
-* scientific and medical claims
-* public records and documented events
+---
 
-i.e. 
-* "inflation peaked at 9.1% in 2022."
-* "the bill passed the Senate in 2021."
-* "the unemployment rate is currently below 5%."
+## 🔒 Privacidade e Permissões
 
-NOT:
-* opinions
-* predictions / future promises
-* rhetorical questions
-* value judgments
-* subjective descriptions
+- **Chaves de API**: Suas chaves de API da Anthropic e Serper são salvas localmente no armazenamento do seu próprio navegador (`chrome.storage`). Nenhum dado de autenticação é enviado a servidores externos além das APIs oficiais configuradas.
+- **Permissões Utilizadas**:
+  * `tabCapture`: Captura o áudio da aba ativa para fins exclusivos de transcrição ao vivo da fala.
+  * `activeTab`: Permite a interação visual da extensão com a aba aberta atual.
+  * `scripting`: Injeta o painel lateral de exibição dos vereditos diretamente na página do vídeo.
+  * `storage`: Guarda localmente as chaves de API e preferências do usuário.
+  * `offscreen`: Executa o processamento do áudio e transcrição em background sem interrupções.
 
-i.e.
-* "This policy will destroy the economy."
-* "I have the best plan."
-* "If my opponent wins, disaster will follow."
+---
 
-## privacy details
+## ⚠️ Limitações e Avisos
 
-users provide their own API credentials, i have no access to that
+A checagem automatizada por IA é uma ferramenta auxiliar e inerentemente imperfeita. Os vereditos podem ocasionalmente conter imprecisões ou basear-se em informações desatualizadas. Sempre avalie as fontes originais recomendadas e realize pesquisas independentes antes de tirar conclusões definitivas. A extensão serve como um recurso informativo e não como uma autoridade absoluta de verdade.
 
-transcript data may be sent directly to the AI service configured by the user in order to generate fact-check results
+### Requisitos mínimos:
+- Chrome Manifest V3.
+- Chave de API própria (Anthropic/Claude).
+- Navegador moderno baseado em Chromium (Google Chrome, Microsoft Edge, Brave, etc.).
 
-see privacy policy on web store for complete details!
+## 📄 Licença
 
-## permissions
+Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para obter mais detalhes.
 
-tabcapture: extracts audio from the active browser tab after the user explicitly starts a fact-checking session.
-
-activetab: allows the extension to interact with the currently selected tab
-
-scripting: injects the fact-checking interface into supported pages.
-
-storage: stores user preferences and API configuration LOCALLY
-
-offscreen: supports background audio processing and transcription workflows.
-
-## limitations and warnings
-
-fact-checking is inherently imperfect! generated verdicts may occasionally be incorrect, incomplete, or based on outdated information. if you're unsure about something, independently evaluate it and consult original sources when making decisions!
-
-this extension is as an informational tool and NOT a definitive authority !
-
-### requirements
-
-* Chrome Manifest V3
-* User-provided AI API key
-* Modern Chromium-based browser
-
-## contributing
-
-would love advice, any features you'd like, and any edge cases you've found! 
-## license
-
-MIT License

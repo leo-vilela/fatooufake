@@ -8,12 +8,13 @@
 let ACTIVE_PROVIDER = 'anthropic';
 let ACTIVE_KEY = '';
 let ACTIVE_MODEL = 'claude-3-5-haiku-20241022';
-const SERPER_KEY = '';
+let SERPER_KEY = '';
 
 async function loadKeys() {
   return new Promise(resolve => {
-    chrome.storage.local.get(['selectedProvider'], (providerData) => {
+    chrome.storage.local.get(['selectedProvider', 'serperKey'], (providerData) => {
       ACTIVE_PROVIDER = providerData.selectedProvider || 'anthropic';
+      SERPER_KEY = providerData.serperKey || '';
       const keyStorageName   = `${ACTIVE_PROVIDER}Key`;
       const modelStorageName = `${ACTIVE_PROVIDER}Model`;
       
@@ -765,8 +766,11 @@ async function startFactCheck() {
   if (isCapturing) return;
 
   await loadKeys();
-  if (!ANTHROPIC_KEY) {
-    throw new Error('Chave de API Anthropic não configurada. Por favor, insira-a no popup da extensão.');
+  if (!ACTIVE_KEY) {
+    throw new Error(`Chave de API para ${ACTIVE_PROVIDER} não configurada. Por favor, insira-a no popup da extensão.`);
+  }
+  if (!SERPER_KEY) {
+    throw new Error('Chave de API Serper não configurada. Por favor, insira-a no popup da extensão.');
   }
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -821,9 +825,15 @@ function stopFactCheck() {
 async function ensureOffscreenDocument() {
   const existing = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
   if (existing.length > 0) return;
-  await chrome.offscreen.createDocument({
-    url: chrome.runtime.getURL('src/offscreen/offscreen.html'),
-    reasons: ['USER_MEDIA'],
-    justification: 'Capture tab audio for Deepgram transcription',
-  });
+  try {
+    await chrome.offscreen.createDocument({
+      url: chrome.runtime.getURL('src/offscreen/offscreen.html'),
+      reasons: ['USER_MEDIA'],
+      justification: 'Capture tab audio for Deepgram transcription',
+    });
+  } catch (err) {
+    if (!err.message.includes('Only a single offscreen document may be created')) {
+      throw err;
+    }
+  }
 }

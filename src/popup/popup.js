@@ -7,6 +7,7 @@ const apiKeyEl      = document.getElementById('apiKey');
 const keyLabelEl    = document.getElementById('keyLabel');
 const apiModelEl    = document.getElementById('apiModel');
 const deepgramKeyEl = document.getElementById('deepgramKey');
+const serperKeyEl   = document.getElementById('serperKey');
 const keyHint       = document.getElementById('keyHint');
 const keysSection   = document.getElementById('keysSection');
 
@@ -84,7 +85,7 @@ apiProviderEl.addEventListener('change', () => {
 
 // ── Load saved state ──────────────────────────────────────────────────────────
 
-chrome.storage.local.get(['selectedProvider', 'deepgramKey'], (data) => {
+chrome.storage.local.get(['selectedProvider', 'deepgramKey', 'serperKey'], (data) => {
   const provider = data.selectedProvider || 'anthropic';
   apiProviderEl.value = provider;
   loadProviderConfig(provider);
@@ -92,6 +93,10 @@ chrome.storage.local.get(['selectedProvider', 'deepgramKey'], (data) => {
   if (data.deepgramKey) {
     deepgramKeyEl.value = data.deepgramKey;
     deepgramKeyEl.classList.add('saved');
+  }
+  if (data.serperKey) {
+    serperKeyEl.value = data.serperKey;
+    serperKeyEl.classList.add('saved');
   }
 });
 
@@ -127,10 +132,24 @@ deepgramKeyEl.addEventListener('change', () => {
   updateHint();
 });
 
+serperKeyEl.addEventListener('input', () => {
+  serperKeyEl.classList.remove('saved');
+  updateHint();
+});
+serperKeyEl.addEventListener('change', () => {
+  chrome.storage.local.set({ serperKey: serperKeyEl.value.trim() });
+  serperKeyEl.classList.add('saved');
+  updateHint();
+});
+
 function updateHint() {
   const providerName = PROVIDERS[apiProviderEl.value].label.replace('Chave de API ', '');
   if (!deepgramKeyEl.value.trim()) {
     keyHint.textContent = 'Insira sua chave de API do Deepgram.';
+    keyHint.className = 'key-hint';
+    toggleBtn.disabled = isActive ? false : true;
+  } else if (!serperKeyEl.value.trim()) {
+    keyHint.textContent = 'Insira sua chave de API do Serper.';
     keyHint.className = 'key-hint';
     toggleBtn.disabled = isActive ? false : true;
   } else if (!apiKeyEl.value.trim()) {
@@ -174,9 +193,16 @@ toggleBtn.addEventListener('click', async () => {
   const key = apiKeyEl.value.trim();
   const model = apiModelEl.value.trim() || PROVIDERS[provider].defaultModel;
   const deepgramKey = deepgramKeyEl.value.trim();
+  const serperKey = serperKeyEl.value.trim();
 
   if (!deepgramKey) {
     keyHint.textContent = 'Por favor, insira sua chave de API do Deepgram.';
+    keyHint.className   = 'key-hint error';
+    return;
+  }
+
+  if (!serperKey) {
+    keyHint.textContent = 'Por favor, insira sua chave de API do Serper.';
     keyHint.className   = 'key-hint error';
     return;
   }
@@ -193,7 +219,8 @@ toggleBtn.addEventListener('click', async () => {
       selectedProvider: provider,
       [`${provider}Key`]: key,
       [`${provider}Model`]: model,
-      deepgramKey: deepgramKey
+      deepgramKey: deepgramKey,
+      serperKey: serperKey
     }, r);
   });
 

@@ -29,7 +29,7 @@ Este projeto é um fork/clone localizado e aprimorado do repositório original [
   - **TSE** (`tse.jus.br`): Resultados de votações e estatísticas oficiais de eleições.
   - **Portal da Transparência** (`transparencia.gov.br`): Gastos públicos federais, salários e contratos.
   - **INEP** (`inep.gov.br`): IDEB, ENEM e estatísticas sobre educação básica e superior.
-- **Otimização de Consultas (Fuzzy Matching)**: Removido o uso de aspas exatas `"${query}"` nas consultas enviadas à API Serper do Google. Isso permite buscas mais flexíveis, com maior taxa de acerto para frases faladas e transcritas em tempo real.
+- **Mecanismo de Busca Híbrido Avançado**: Implementada uma lógica inteligente em duas etapas para consultas no Google. A IA gera um termo estrito contendo aspas exatas para estatísticas, numerais e nomes próprios específicos (`strict_query`) e um termo flexível com palavras-chave abertas (`fuzzy_query`). O sistema executa primeiro a busca de alta precisão (estrita) contra a whitelist oficial e checadores; se o volume de resultados for baixo (menos de 2 links), realiza uma busca flexível secundária e mescla os resultados para tolerar falhas de transcrição de áudio sem perder cobertura.
 - **Filtros de Imparcialidade e Spam**: Adaptação da lista de bloqueio de domínios para ignorar propagandas de partidos políticos brasileiros e redes sociais amplamente difundidas no cenário nacional (como Kwai e TikTok).
 - **Prompt da IA Customizado**: Reformulação completa das instruções do Service Worker em português (`EVALUATE_PROMPT`), focando nas nuances e gírias da retórica política do Brasil.
 - **Exportação de Relatórios**: O modelo de exportação de sessões em PDF/HTML foi adaptado para gerar relatórios detalhados inteiramente em português.
